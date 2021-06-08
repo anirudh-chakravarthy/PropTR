@@ -184,7 +184,7 @@ def make_coco_transforms(image_set):
                      T.RandomSizeCrop(384, 600),
                      # To suit the GPU memory the scale might be different
                      T.RandomResize([300], max_size=540),#for r50
-                     #T.RandomResize([280], max_size=504),#for r101
+                     # T.RandomResize([280], max_size=504),#for r101
             ]),
             normalize,
         ])

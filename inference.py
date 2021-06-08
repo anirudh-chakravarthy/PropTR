@@ -166,6 +166,7 @@ def main(args):
         model.to(device)
         state_dict = torch.load(args.model_path)['model']
         model.load_state_dict(state_dict)
+        model.eval()
         folder = args.img_path
         videos = json.load(open(args.ann_path, 'rb'))['videos']
         vis_num = len(videos)
@@ -207,7 +208,7 @@ def main(args):
             # generate json format
             for i_id in range(num_queries):
                 score = np.mean(scores[i_id])
-                if score < 0.001:
+                if segmentation[i_id].count(None) == length or score < 0.001:
                     continue
                 category_id = np.argmax(np.bincount(category_ids[i_id]))
                 instance = {'video_id':id_, 'score': float(score), 'category_id': int(category_id)}

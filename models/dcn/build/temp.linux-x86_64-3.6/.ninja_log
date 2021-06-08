@@ -1,0 +1,6 @@
+# ninja log v5
+1	39686	1621233839957194117	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.6/deformable/deform_conv_cuda_kernel.o	9a304a92a8832d07
+1	40002	1621233840254196979	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.6/deformable/deform_conv_cuda.o	e65082431cbd860c
+1	43789	1621233844050233552	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.6/deformable/deform_conv.o	9b02e99055a6566e
+1180	24388	1621246269698234319	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.6/deformable/deform_conv_cuda_kernel.o	96d9b1b51f740bed
+1180	25887	1621246271200248826	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.6/deformable/deform_conv_cuda.o	96b09f3cacace456

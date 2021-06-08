@@ -199,6 +199,7 @@ def main(args):
         model.to(device)
         state_dict = torch.load(args.model_path)['model']
         model.load_state_dict(state_dict)
+        model.eval()
         folder = args.img_path
         videos = json.load(open(args.ann_path, 'rb'))['videos']
         vis_num = len(videos)
@@ -220,7 +221,7 @@ def main(args):
                     key_masks = np.zeros((K, num_queries, length, *ref_im.size[1::-1]), dtype=np.uint8)
                 prev_img = ref_img
                 for t in range(length):
-                    if t == frame_id:
+                    if t == frame_id == 0:
                         outputs = model(ref_img)
                     else:
                         im = Image.open(os.path.join(folder, file_names[t])).convert('RGB')
@@ -235,33 +236,53 @@ def main(args):
                     pred_logits = logits.cpu().detach().numpy()
                     pred_scores = np.max(pred_logits,axis=-1)
                     pred_logits = np.argmax(pred_logits,axis=-1)
-                    for i_id in range(num_queries):
-                        key_scores[k_id, i_id, t] = pred_scores[i_id]
-                        key_labels[k_id, i_id, t] = pred_logits[i_id]
-                        key_masks[k_id, i_id, t] = (pred_masks[i_id]).astype(np.uint8)
-            key_scores = key_scores.mean(axis=2)
-            key_masks = key_masks.reshape(-1, length, *key_masks.shape[-2:])
-            key_labels = key_labels.reshape(-1, length)
-            key_labels = np.asarray([
-                np.argmax(np.bincount(key_labels[i]))
-                for i in range(key_labels.shape[0])
-            ])
-            keep, labels = sequence_nms(key_masks, key_scores, key_labels)
-            scores = key_scores.flatten()
-            for obj_id, idx in enumerate(keep):
-                label = labels[obj_id]
-                score = scores[obj_id]
-                segmentation = []
-                instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
+                    key_scores[k_id, :, t] = pred_scores
+                    key_labels[k_id, :, t] = pred_logits
+                    key_masks[k_id, :, t] = pred_masks.astype(np.uint8)
+            for i_id in range(num_queries):
+                scores, segmentation = [], []
+                label = np.bincount(key_labels[:, i_id, :].flatten()).argmax()
                 for t in range(length):
-                    mask = key_masks[obj_id, t]
+                    idx = key_scores[:, i_id, t].argmax()
+                    score = key_scores[idx, i_id, t]
+                    # scores.append(score)
+                    mask = key_masks[idx, i_id, t]
                     if mask.max() == 0:
                         segmentation.append(None)
-                    rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
-                    rle["counts"] = rle["counts"].decode("utf-8")
-                    segmentation.append(rle)
+                    else:
+                        rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
+                        rle["counts"] = rle["counts"].decode("utf-8")
+                        segmentation.append(rle)
+                        scores.append(score)
+                if segmentation.count(None) == length:
+                    continue
+                score = np.mean(scores)
+                instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
                 instance['segmentations'] = segmentation
                 result.append(instance)
+            # key_scores = key_scores.mean(axis=2)
+            # key_masks = key_masks.reshape(-1, length, *key_masks.shape[-2:])
+            # key_labels = key_labels.reshape(-1, length)
+            # key_labels = np.asarray([
+            #     np.argmax(np.bincount(key_labels[i]))
+            #     for i in range(key_labels.shape[0])
+            # ])
+            # keep, labels = sequence_nms(key_masks, key_scores, key_labels)
+            # scores = key_scores.flatten()
+            # for obj_id, idx in enumerate(keep):
+            #     label = labels[obj_id]
+            #     score = scores[obj_id]
+            #     segmentation = []
+            #     instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
+            #     for t in range(length):
+            #         mask = key_masks[obj_id, t]
+            #         if mask.max() == 0:
+            #             segmentation.append(None)
+            #         rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
+            #         rle["counts"] = rle["counts"].decode("utf-8")
+            #         segmentation.append(rle)
+            #     instance['segmentations'] = segmentation
+            #     result.append(instance)
     with open(args.save_path, 'w', encoding='utf-8') as f:
         json.dump(result, f)                    
 

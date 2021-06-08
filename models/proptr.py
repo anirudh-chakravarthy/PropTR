@@ -13,7 +13,7 @@ from util.misc import (NestedTensor, nested_tensor_from_tensor_list,
 
 from .backbone import build_backbone
 from .matcher import build_matcher
-from .segmentation import (PropTRsegm, PostProcessPanoptic, PostProcessSegm,
+from .segmentation import (PropTRsegm, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
 from .transformer import build_transformer
 import pdb

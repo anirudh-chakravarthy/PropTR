@@ -1,0 +1,22 @@
+# ninja log v5
+8	23152	1621280028724409249	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	4b033ac097e0016e
+7	24503	1621280030106422645	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	2fa10192c0eb2620
+8	28688	1621280034278463083	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv.o	ada8ecd8e1ca4a02
+1481	21542	1621280746805366600	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	e674fc55ae161338
+1481	22243	1621280747508373410	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	e96f431a5c4a40a1
+1517	32923	1621281510256779452	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	4b033ac097e0016e
+1517	37830	1621281515168827506	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	2fa10192c0eb2620
+1448	24756	1621281696691602454	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	a9973a321995d03c
+1447	24949	1621281696888604378	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	2d1875c3811ebafb
+1282	25316	1621318075440450287	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	4b033ac097e0016e
+1282	26735	1621318076857464000	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	2fa10192c0eb2620
+1654	21445	1621320579642680629	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	72bb3c83425fb11d
+1654	21682	1621320579874682873	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	fe8f86be230ab700
+1450	19320	1621321170607397648	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	e674fc55ae161338
+1449	19633	1621321170926400731	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	e96f431a5c4a40a1
+1270	18008	1621321384979471508	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	72bb3c83425fb11d
+1270	18460	1621321385457476134	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	fe8f86be230ab700
+1611	25268	1621406522220434802	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	4b033ac097e0016e
+1610	26659	1621406523630448327	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	2fa10192c0eb2620
+1570	24563	1621413035965969779	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda_kernel.o	a9973a321995d03c
+1569	25196	1621413036599975872	/net/coxfs01/srv/export/coxfs01/pfister_lab2/share_root/Lab/anirudhchak/vistr/models/dcn/build/temp.linux-x86_64-3.8/deformable/deform_conv_cuda.o	2d1875c3811ebafb
