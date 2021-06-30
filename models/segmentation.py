@@ -77,6 +77,33 @@ class PropTRsegm(nn.Module):
 
         out["pred_masks"] = outputs_seg_masks
         return out
+    
+    def predict(self, samples: NestedTensor, prev_hs):
+        if isinstance(samples, (list, torch.Tensor)):
+            samples = nested_tensor_from_tensor_list(samples)
+        features, pos = self.proptr.backbone(samples)
+
+        bs = features[-1].tensors.shape[0]
+        
+        src, mask = features[-1].decompose()
+        assert mask is not None
+        src_proj = self.proptr.input_proj(src)
+        hs, memory = self.proptr.transformer(src_proj, mask, prev_hs, pos[-1])
+
+        outputs_class = self.proptr.class_embed(hs)
+        outputs_coord = self.proptr.bbox_embed(hs).sigmoid()
+        out = {"pred_logits": outputs_class[-1], "pred_boxes": outputs_coord[-1]}
+        if self.proptr.aux_loss:
+            out['aux_outputs'] = self.proptr._set_aux_loss(outputs_class, outputs_coord)
+
+        # FIXME h_boxes takes the last one computed, keep this in mind
+        bbox_mask = self.bbox_attention(hs[-1], memory, mask=mask)
+
+        seg_masks = self.mask_head(src_proj, bbox_mask, [features[2].tensors, features[1].tensors, features[0].tensors])
+        outputs_seg_masks = seg_masks.view(bs, self.proptr.num_queries, seg_masks.shape[-2], seg_masks.shape[-1])
+
+        out["pred_masks"] = outputs_seg_masks
+        return out, hs[-1].permute(1, 0, 2)
 
 
 def _expand(tensor, length: int):

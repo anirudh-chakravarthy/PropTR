@@ -110,6 +110,7 @@ def get_args_parser():
                         help='start epoch')
     parser.add_argument('--eval', action='store_false')
     parser.add_argument('--num_workers', default=0, type=int)
+    parser.add_argument('--K', default=4, type=int)
 
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
@@ -182,6 +183,29 @@ def sequence_nms(key_masks, key_scores, key_labels):
         order = order[inds + 1]
     return keep, labels
 
+def sequence_proposals_reduction(key_masks, key_scores, key_labels):
+    iou_thr = 0.5
+    scores = key_scores.flatten()
+    out_seq = []
+    keep, labels = [], []
+    while scores.max() > 0:
+        max_id = scores.argmax()
+        k_id = max_id // 10
+        q_id = max_id % 10
+        out_seq.append({'k_id': k_id, 'q_id': q_id})
+        scores[max_id] = -1e6
+        keep.append(max_id)
+        labels.append(key_labels[max_id])
+        for s_id, s_val in enumerate(scores):
+            if s_val > 0:
+                int_val = np.bitwise_and(
+                    key_masks[max_id], key_masks[s_id]).sum()
+                uni_val = np.bitwise_or(
+                    key_masks[max_id], key_masks[s_id]).sum()
+                iou_val = int_val / uni_val
+                if iou_val >= iou_thr:
+                    scores[s_id] = -1e6
+    return keep, labels
 
 def main(args):
 
@@ -193,7 +217,7 @@ def main(args):
     np.random.seed(seed)
     random.seed(seed)
     num_queries = args.num_queries
-    K = 4
+    K = args.K
     with torch.no_grad():
         model, criterion, postprocessors = build_model(args)
         model.to(device)
@@ -210,7 +234,8 @@ def main(args):
             length = videos[i]['length']
             file_names = videos[i]['file_names']
             # propose reduce results
-            key_frames = [max(length//K, 1) * k for k in range(K)]
+            key_frames = [max(length//K, 1) * k for k in range(min(K, length))]
+            assert len(key_frames) <= length
             key_scores = np.zeros((K, num_queries, length), dtype=float)
             key_labels = np.zeros((K, num_queries, length), dtype=np.uint8)
             key_masks = None
@@ -219,15 +244,16 @@ def main(args):
                 ref_img = transform(ref_im).unsqueeze(0).cuda()
                 if key_masks is None:
                     key_masks = np.zeros((K, num_queries, length, *ref_im.size[1::-1]), dtype=np.uint8)
-                prev_img = ref_img
-                for t in range(length):
-                    if t == frame_id == 0:
-                        outputs = model(ref_img)
+                ref_outputs, ref_hs = model.predict(ref_img, model.proptr.query_embed.weight.data)
+                # forward pass
+                for t in range(frame_id, length):
+                    if t == frame_id:
+                        prev_hs = ref_hs
+                        outputs = ref_outputs
                     else:
                         im = Image.open(os.path.join(folder, file_names[t])).convert('RGB')
                         img = transform(im).unsqueeze(0).cuda()
-                        outputs = model(img, prev_img)
-                        prev_img = img
+                        outputs, prev_hs = model.predict(img, prev_hs)
                     logits, boxes, masks = (outputs['pred_logits'].softmax(-1)[0,:,:-1], 
                                             outputs['pred_boxes'][0], outputs['pred_masks'][0])
                     pred_masks = F.interpolate(
@@ -239,50 +265,95 @@ def main(args):
                     key_scores[k_id, :, t] = pred_scores
                     key_labels[k_id, :, t] = pred_logits
                     key_masks[k_id, :, t] = pred_masks.astype(np.uint8)
-            for i_id in range(num_queries):
-                scores, segmentation = [], []
-                label = np.bincount(key_labels[:, i_id, :].flatten()).argmax()
+                # backward pass
+                prev_hs = ref_hs
+                for t in range(frame_id-1, -1, -1):
+                    im = Image.open(os.path.join(folder, file_names[t])).convert('RGB')
+                    img = transform(im).unsqueeze(0).cuda()
+                    outputs, prev_hs = model.predict(img, prev_hs)
+                    logits, boxes, masks = (outputs['pred_logits'].softmax(-1)[0,:,:-1], 
+                                            outputs['pred_boxes'][0], outputs['pred_masks'][0])
+                    pred_masks = F.interpolate(
+                        masks.unsqueeze(0), size=ref_im.size[1::-1], mode="bilinear")[0]
+                    pred_masks = pred_masks.sigmoid().cpu().detach().numpy() > 0.5
+                    pred_logits = logits.cpu().detach().numpy()
+                    pred_scores = np.max(pred_logits,axis=-1)
+                    pred_logits = np.argmax(pred_logits,axis=-1)
+                    key_scores[k_id, :, t] = pred_scores
+                    key_labels[k_id, :, t] = pred_logits
+                    key_masks[k_id, :, t] = pred_masks.astype(np.uint8)
+#                 for t in range(length):
+#                     im = Image.open(os.path.join(folder, file_names[t])).convert('RGB')
+#                     img = transform(im).unsqueeze(0).cuda()
+#                     if t == frame_id:
+#                         outputs = ref_outputs
+#                     else:
+#                         outputs, _ = model.predict(img, ref_hs)
+#                 prev_img = ref_img
+#                 for t in range(length):
+#                     if t == frame_id == 0:
+#                         outputs = model(ref_img)
+#                     else:
+#                         im = Image.open(os.path.join(folder, file_names[t])).convert('RGB')
+#                         img = transform(im).unsqueeze(0).cuda()
+#                         outputs = model(img, prev_img)
+#                         prev_img = img
+#                     logits, boxes, masks = (outputs['pred_logits'].softmax(-1)[0,:,:-1], 
+#                                             outputs['pred_boxes'][0], outputs['pred_masks'][0])
+#                     pred_masks = F.interpolate(
+#                         masks.unsqueeze(0), size=ref_im.size[1::-1], mode="bilinear")[0]
+#                     pred_masks = pred_masks.sigmoid().cpu().detach().numpy() > 0.5
+#                     pred_logits = logits.cpu().detach().numpy()
+#                     pred_scores = np.max(pred_logits,axis=-1)
+#                     pred_logits = np.argmax(pred_logits,axis=-1)
+#                     key_scores[k_id, :, t] = pred_scores
+#                     key_labels[k_id, :, t] = pred_logits
+#                     key_masks[k_id, :, t] = pred_masks.astype(np.uint8)
+#             for i_id in range(num_queries):
+#                 scores, segmentation = [], []
+#                 label = np.bincount(key_labels[:, i_id, :].flatten()).argmax()
+#                 for t in range(length):
+#                     idx = key_scores[:, i_id, t].argmax()
+#                     score = key_scores[idx, i_id, t]
+#                     # scores.append(score)
+#                     mask = key_masks[idx, i_id, t]
+#                     if mask.max() == 0:
+#                         segmentation.append(None)
+#                     else:
+#                         rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
+#                         rle["counts"] = rle["counts"].decode("utf-8")
+#                         segmentation.append(rle)
+#                         scores.append(score)
+#                 score = np.mean(scores)
+#                 if segmentation.count(None) == length or score < 0.05:
+#                     continue
+#                 instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
+#                 instance['segmentations'] = segmentation
+#                 result.append(instance)
+            key_scores = key_scores.mean(axis=2)
+            key_masks = key_masks.reshape(-1, length, *key_masks.shape[-2:])
+            key_labels = key_labels.reshape(-1, length)
+            key_labels = np.asarray([
+                np.argmax(np.bincount(key_labels[i]))
+                for i in range(key_labels.shape[0])
+            ])
+            # keep, labels = sequence_nms(key_masks, key_scores, key_labels)
+            keep, labels = sequence_proposals_reduction(key_masks, key_scores, key_labels)
+            scores = key_scores.flatten()
+            for obj_id, idx in enumerate(keep):
+                label = labels[obj_id]
+                score = scores[obj_id]
+                segmentation = []
+                instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
                 for t in range(length):
-                    idx = key_scores[:, i_id, t].argmax()
-                    score = key_scores[idx, i_id, t]
-                    # scores.append(score)
-                    mask = key_masks[idx, i_id, t]
+                    mask = key_masks[obj_id, t]
                     if mask.max() == 0:
                         segmentation.append(None)
-                    else:
-                        rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
-                        rle["counts"] = rle["counts"].decode("utf-8")
-                        segmentation.append(rle)
-                        scores.append(score)
-                if segmentation.count(None) == length:
-                    continue
-                score = np.mean(scores)
-                instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
+                    rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
+                    rle["counts"] = rle["counts"].decode("utf-8")
+                    segmentation.append(rle)
                 instance['segmentations'] = segmentation
                 result.append(instance)
-            # key_scores = key_scores.mean(axis=2)
-            # key_masks = key_masks.reshape(-1, length, *key_masks.shape[-2:])
-            # key_labels = key_labels.reshape(-1, length)
-            # key_labels = np.asarray([
-            #     np.argmax(np.bincount(key_labels[i]))
-            #     for i in range(key_labels.shape[0])
-            # ])
-            # keep, labels = sequence_nms(key_masks, key_scores, key_labels)
-            # scores = key_scores.flatten()
-            # for obj_id, idx in enumerate(keep):
-            #     label = labels[obj_id]
-            #     score = scores[obj_id]
-            #     segmentation = []
-            #     instance = {'video_id': id_, 'score': float(score), 'category_id': int(label)}
-            #     for t in range(length):
-            #         mask = key_masks[obj_id, t]
-            #         if mask.max() == 0:
-            #             segmentation.append(None)
-            #         rle = mask_util.encode(np.array(mask[:,:,np.newaxis], order='F'))[0]
-            #         rle["counts"] = rle["counts"].decode("utf-8")
-            #         segmentation.append(rle)
-            #     instance['segmentations'] = segmentation
-            #     result.append(instance)
     with open(args.save_path, 'w', encoding='utf-8') as f:
         json.dump(result, f)                    
 

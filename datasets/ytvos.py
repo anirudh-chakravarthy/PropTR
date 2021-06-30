@@ -71,6 +71,12 @@ class YTVOSDataset:
         vid, frame_id = self.img_ids[idx]
         vid_info = self.vid_infos[vid]
         sample_range = range(len(vid_info['filenames']))
+#         if frame_id > 0:
+#             ref_idx = (vid, frame_id-1)
+#         else:
+#             assert frame_id+1 < len(vid_info['filenames'])
+#             ref_idx = (vid, frame_id+1)
+#         return ref_idx
         valid_samples = []
         for i in sample_range:
             # check if the frame id is valid
@@ -182,8 +188,10 @@ def make_coco_transforms(image_set):
             T.Compose([
                      T.RandomResize([400, 500, 600]),
                      T.RandomSizeCrop(384, 600),
+                     T.RandomResize([360], max_size=640),
+                     # T.RandomResize([320], max_size=576),
                      # To suit the GPU memory the scale might be different
-                     T.RandomResize([300], max_size=540),#for r50
+                     # T.RandomResize([300], max_size=540),#for r50
                      # T.RandomResize([280], max_size=504),#for r101
             ]),
             normalize,

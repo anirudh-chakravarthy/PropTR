@@ -9,9 +9,9 @@
 #SBATCH -o scripts/_test_%j.%N.out # STDOUT
 #SBATCH -e scripts/_test_%j.%N.err # STDERR
 
-module load cuda/10.2.89-fasrc01 cudnn/7.6.5.32_cuda10.2-fasrc01
-module load gcc/7.1.0-fasrc01
+module load cuda/10.2.89-fasrc01 cudnn/7.6.5.32_cuda10.2-fasrc01 gcc/7.1.0-fasrc01
 source activate detr
 
-# python inference.py --masks --model_path r50_proptr/checkpoint.pth --save_path output/results.json
-python inference_prop_reduce.py --masks --model_path r50_proptr/checkpoint.pth --save_path output/results.json
+python inference.py --masks --model_path r50_proptr/checkpoint.pth --save_path output/results.json
+# python inference_prop_reduce.py --masks --model_path r50_proptr/checkpoint.pth --save_path output/results.json --K 4
+# python inference.py --masks --model_path r50_proptr_100queries/checkpoint.pth --save_path output/results.json --num_queries 100

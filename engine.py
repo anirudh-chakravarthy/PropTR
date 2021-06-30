@@ -33,6 +33,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         outputs = model(samples, ref_samples)
         loss_dict = criterion(outputs, targets)
+        
+        # two-way training
+        ref_outputs = model(ref_samples, samples)
+        ref_loss_dict = criterion(ref_outputs, ref_targets)
+        loss_dict = {k: 0.5 * (loss_dict[k] + ref_loss_dict[k]) for k in loss_dict.keys()}
+
         weight_dict = criterion.weight_dict
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
 

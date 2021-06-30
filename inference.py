@@ -131,6 +131,7 @@ COLORS = [[0.000, 0.447, 0.741], [0.850, 0.325, 0.098], [0.929, 0.694, 0.125],
 
 transform = T.Compose([
     T.Resize(300),
+    # T.Resize(360),
     T.ToTensor(),
     T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
@@ -176,6 +177,7 @@ def main(args):
             id_ = videos[i]['id']
             length = videos[i]['length']
             file_names = videos[i]['file_names']
+            ref_hs = model.proptr.query_embed.weight.data
             prev_img = None
             scores = [[] for _ in range(num_queries)]
             category_ids = [[] for _ in range(num_queries)]
@@ -185,6 +187,10 @@ def main(args):
                 img = transform(im).unsqueeze(0).cuda()
                 # inference time is calculated for this operation
                 outputs = model(img, prev_img)
+                # outputs, ref_hs = model.predict(img, ref_hs)
+                # outputs, hs = model.predict(img, ref_hs)
+                # if t == 0:
+                #     ref_hs = hs
                 # end of model inference
                 logits, boxes, masks = (outputs['pred_logits'].softmax(-1)[0,:,:-1], 
                                         outputs['pred_boxes'][0], outputs['pred_masks'][0])
